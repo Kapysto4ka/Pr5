@@ -10,6 +10,7 @@
 }
 #input-task input::placeholder, #input-task input {
     padding-left: 10px;
+
 }
 
 .list-container{
@@ -22,7 +23,7 @@
     display: flex;
 }
 
-.list-container input{
+#input-task input{
         width: 95%;
         height: 30px;
         margin: 6px 0;
@@ -48,14 +49,23 @@
     padding-top: 10px;
 }
 .remove-item{
-    width: 5%;
     font-size: 30px;
     padding: 5px 5px 0 0;
-    text-align: right;
 }
+
 .task-container form label{
     width: 140px;
 }
+.task-container input[placeholder="Edit task"] {
+    width: 500px;
+}
+
+
+.task-container input[name="task"] {
+    width: 50px;
+    margin-left: 10px;
+}
+
 .task-container form{
         width: 15%;
         display: flex;
