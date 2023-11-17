@@ -4,12 +4,87 @@ document.addEventListener("DOMContentLoaded", function () {
     const taskList = document.getElementById("task-list");
     let isSortDescending = true;
 
+
+     function outputTasks() {
+    let tasks;
+    if(localStorage.getItem('tasks') === null) {
+        tasks = [];
+    } else {
+        tasks = JSON.parse(localStorage.getItem('tasks'));
+    }
+    tasks.forEach(task => {
+      addTask(task.task, task.isCheckboxHidden, task.time);
+    });
+    }
+
+    outputTasks();
+    function addTaskToLocalStorage(task, isCheckboxHidden, time) {
+          let tasks;
+          if (localStorage.getItem('tasks') === null) {
+            tasks = [];
+          } else {
+            tasks = JSON.parse(localStorage.getItem('tasks'));
+          }
+          tasks.push({
+            task: task,
+            isCheckboxHidden: isCheckboxHidden,
+            time: time
+          });
+          localStorage.setItem('tasks', JSON.stringify(tasks));
+        }
+
+
+    function removeTaskFromLocalStorage(taskItem) {
+        let tasks;
+        if(localStorage.getItem('tasks') === null) {
+            tasks = [];
+        } else {
+            tasks = JSON.parse(localStorage.getItem('tasks'));
+        }
+         tasks.forEach((task, index) => {
+        if (task.task === taskItem.task) {
+            tasks.splice(index, 1);
+        }
+        });
+        localStorage.setItem('tasks', JSON.stringify(tasks));
+    }
+
+    function updateTaskInLocalStorage(oldTask, newTask) {
+        let tasks;
+        if(localStorage.getItem('tasks') === null) {
+            tasks = [];
+        } else {
+            tasks = JSON.parse(localStorage.getItem('tasks'));
+        }
+        tasks.forEach(task => {
+          if (task.task === oldTask) {
+            task.task = newTask;
+          }
+        });
+        localStorage.setItem('tasks', JSON.stringify(tasks));
+    }
+
+    function updateCheckboxInLocalStorage(updatedTask){
+        if(localStorage.getItem('tasks') === null) {
+            tasks = [];
+        } else {
+            tasks = JSON.parse(localStorage.getItem('tasks'));
+        }
+        tasks.forEach(task => {
+          if(task.task === updatedTask.task){
+              task.isCheckboxHidden = updatedTask.isCheckboxHidden
+          }
+        });
+        localStorage.setItem('tasks', JSON.stringify(tasks));
+    }
+
     input.addEventListener("keypress", function (event) {
         if (event.key === "Enter") {
             const inputValue = input.value;
             if (inputValue.trim() !== '' && inputValue.trim().length < 70) {
                 let isCheckboxHidden = false;
                 addTask(inputValue, isCheckboxHidden, initTime());
+                addTaskToLocalStorage(inputValue, isCheckboxHidden, initTime());
             }
             input.value = "";
         }
@@ -35,6 +110,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const notDoneTasks = [];
         taskList.childNodes.forEach(task => {
             if (task.nodeType === 1) {
+                console.log(task.getAttribute('innerHTML'))
                 const done = task.getAttribute('data-done') === 'true';
                 if (done) {
                     doneTasks.push(task);
@@ -77,14 +153,22 @@ document.addEventListener("DOMContentLoaded", function () {
 `;
         taskList.insertBefore(newTask, taskList.firstChild);
 
+        const editT = document.createElement("div");
+        editT.className = "time-container no-border";
+        editT.innerHTML = '<input id="inputTask${id}" class="new-text" placeholder="Edit task">'
         const checkbox = newTask.querySelector('input[type="checkbox"]');
         const label = newTask.querySelector('label[for="task"]');
         const taskText = newTask.querySelector('.task-text.no-border');
         const timeDiv = newTask.querySelector(".time-container");
         const removeButton = newTask.querySelector('i.fa-sharp.fa-solid.fa-xmark');
+        let checkboxRemoved;
+        checkboxRemoved = checkbox == null;
 
         if (isCheckboxHidden) {
-            checkbox.classList.toggle("hide");
+            newTask.setAttribute('data-done', 'true');
+            label.innerHTML = 'Виконано'
+            checkbox.remove()
+            checkboxRemoved = true
             taskText.style.color = 'gray';
             taskText.style.textDecoration = "line-through";
         }
@@ -95,19 +179,58 @@ document.addEventListener("DOMContentLoaded", function () {
             label.innerHTML = 'Виконано'
             taskText.style.textDecoration = "line-through";
             checkbox.remove()
+            checkboxRemoved = true
+            checkbox.innerHTML = null
             taskText.style.color = 'gray';
             isCheckboxHidden = true;
             newTask.setAttribute('data-done', 'true');
+            let task = {
+                task : taskText.innerText,
+                isCheckboxHidden : isCheckboxHidden,
+                time : time
+            }
+            updateCheckboxInLocalStorage(task)
         });
 
-        newTask.addEventListener("dblclick", function () {
-            checkbox.disabled = !isCheckboxHidden;
-            isCheckboxHidden = !isCheckboxHidden;
-            checkbox.classList.toggle('hide', isCheckboxHidden);
+        taskText.addEventListener("dblclick", function () {
+             if (checkboxRemoved === false) {
+                checkbox.disabled = !isCheckboxHidden;
+                isCheckboxHidden = !isCheckboxHidden;
+                checkbox.classList.toggle('hide', isCheckboxHidden);
+                if (isCheckboxHidden) {
+                    oldText = taskText.innerHTML;
+                    taskText.innerHTML = editT.innerHTML;
+                } else {
+                    taskText.innerHTML = oldText;
+                }
+                timeDiv.classList.toggle('hide');
+                 const editItem = document.querySelector('.new-text');
+                if (editItem !== null) {
+                    editItem.value = oldText;
+                    editItem.focus();
+                    editItem.addEventListener("keypress", function (event) {
+                        if (event.key === "Enter") {
+                            isCheckboxHidden = !isCheckboxHidden;
+                            timeDiv.classList.toggle('hide');
+                            checkbox.classList.toggle('hide', isCheckboxHidden);
+                            editItem.classList.toggle('hide');
+                            taskText.innerText = editItem.value;
+                            checkbox.disabled = false;
+                            updateTaskInLocalStorage(oldText,taskText.innerText)
+                            }
+                        });
+                }
+             }
         });
 
         removeButton.addEventListener('click', function () {
             newTask.remove();
+            let task = {
+                task : taskText.innerText,
+                isCheckboxHidden : isCheckboxHidden,
+                time : time
+            }
+            removeTaskFromLocalStorage(task);
         });
     }
 });
